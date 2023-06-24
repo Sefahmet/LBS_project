@@ -1,4 +1,4 @@
-package Format;
+package com.example.lbs_project.Format;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
@@ -6,13 +6,10 @@ import org.geotools.data.FeatureSource;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.opengis.feature.Feature;
-import org.opengis.feature.GeometryAttribute;
 
-import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.*;
-import java.util.List;
 
 public class ReadSHPFiles {
     public static void main(String[] args) {
@@ -345,6 +342,7 @@ public class ReadSHPFiles {
            }
         }
 
+
         HashMap<String,Object> result = new HashMap<>();
         result.put("maxAngle", Collections.max(angleList));
         result.put("minAngle", Collections.min(angleList));
@@ -357,33 +355,5 @@ public class ReadSHPFiles {
 
         return result;
     }
-  /*  private void findPolygonsForPoint(Coordinate point) {
-        Filter filter = null;
-        SimpleFeatureIterator iterator = null;
-        try {
-            filter = CQL.toFilter("CONTAINS(the_geom, POINT(" + point.x + " " + point.y + "))");
 
-            SimpleFeatureCollection collection = source.getFeatures(filter);
-            if(collection.size() < 1) {
-                System.out.println(coordinate2String(point) + " is NOT in a polygon");
-            } else {
-                System.out.println(coordinate2String(point) + " IS in a polygon");
-                insidePolygon++;
-                iterator = collection.features();
-
-                while(iterator.hasNext()) {
-                    SimpleFeature feature = iterator.next();
-                    //find nearest edge of the polygon
-                }
-            }
-        } catch(CQLException e) {
-            aLog.error("", e);
-        } catch(IOException e) {
-            aLog.error("", e);
-        } finally {
-            if(iterator != null) {
-                iterator.close();
-            }
-        }
-    }*/
 }
