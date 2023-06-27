@@ -4,32 +4,41 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.jgrapht.graph.DefaultWeightedEdge;
+import org.locationtech.jts.geom.Coordinate;
+
+import java.util.List;
+
 @NoArgsConstructor
 public class Edge extends DefaultWeightedEdge {
-        @Getter @Setter int fid;
-        @Getter @Setter  private Long u_id;
-        @Getter @Setter  private Long v_id;
+        @Getter @Setter String fid;
+        @Getter @Setter  private String u_id;
+        @Getter @Setter  private String v_id;
         @Getter @Setter  private Node u;
         @Getter @Setter  private Node v;
         @Getter @Setter  private double distance;
+        @Getter @Setter private List<Coordinate> edgeCoordinates;
+        @Getter @Setter private String streetName;
 
-
-    public Edge(int fid, Long u_id, Long v_id) {
+    public Edge(String fid, String  u_id, String v_id,Node u,Node v){
         this.fid = fid;
         this.u_id = u_id;
         this.v_id = v_id;;
+        this.u  = u ;
+        this.v  = v;
     }
-    public Edge(int fid, Long u_id, Long v_id, double weight) {
+    public Edge(String fid, String u_id, String v_id,Node u,Node v,double distance,List<Coordinate> edgeCoordinates,String streetName) {
         this.fid = fid;
         this.u_id = u_id;
         this.v_id = v_id;;
-    }
-    public Edge(int fid, Long u_id, Long v_id, double distance, double slope) {
-        this.fid = fid;
-        this.u_id = u_id;
-        this.v_id = v_id;;
+        this.u  = u ;
+        this.v  = v;
         this.distance = distance;
+        this.edgeCoordinates = edgeCoordinates;
+        this.streetName = streetName;
     }
+
+
+
 
 
 

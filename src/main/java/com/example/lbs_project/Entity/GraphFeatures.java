@@ -1,34 +1,41 @@
 package com.example.lbs_project.Entity;
 
+import com.example.lbs_project.Service.GraphFeaturesGetter;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
+@NoArgsConstructor
 public class GraphFeatures {
-    private Graph<Node, DefaultWeightedEdge> graph;
-    private HashMap<String,Node> nodeHashMap;
-    private HashMap<String[],Edge> edgeHashMap;
-
-
-    public HashMap<String, Node> getNodeHashMap() {
-        return nodeHashMap;
+    @Getter @Setter private Graph<Node, DefaultWeightedEdge> graph;
+    @Getter @Setter private HashMap<String,Node> nodeHashMap;
+    @Getter @Setter private HashMap<List<String>,Edge> edgeHashMap;
+    @Getter @Setter private SimpleFeatureCollection building;
+    private static GraphFeatures instance;
+    public static GraphFeatures getInstance() throws IOException {
+        if (instance == null){
+            instance = GraphFeaturesGetter.getGraphFeatrues();
+        }
+        return instance;
     }
-
-    public HashMap<String[], Edge> getEdgeHashMap() {
-        return edgeHashMap;
-    }
-
-    public Graph<Node, DefaultWeightedEdge> getGraph() {return graph;}
-
-
-    public void setEdgeHashMap(HashMap<String[], Edge> edgeHashMap) {
+    public GraphFeatures(Graph<Node, DefaultWeightedEdge> graph, HashMap<String, Node> nodeHashMap, HashMap<List<String>, Edge> edgeHashMap){
+        this.graph = graph;
         this.edgeHashMap = edgeHashMap;
-    }
-
-    public void setNodeHashMap(HashMap<String, Node> nodeHashMap) {
         this.nodeHashMap = nodeHashMap;
     }
+    public GraphFeatures(Graph<Node, DefaultWeightedEdge> graph,HashMap<String,Node> nodeHashMap,HashMap<List<String>,Edge> edgeHashMap,SimpleFeatureCollection building){
+        this.graph = graph;
+        this.edgeHashMap = edgeHashMap;
+        this.nodeHashMap = nodeHashMap;
+        this.building = building;
 
-    public void setGraph(Graph<Node, DefaultWeightedEdge> graph) {this.graph = graph;}
+    }
+
 }
