@@ -20,11 +20,9 @@ public class shortestPath2Coordinate {
 
         Iterator iterator = shortestPath.getEdgeList().iterator();
         HashMap<List<String>, Edge> edgeHashMap = data.getGraphFeatures().getEdgeHashMap();
-        System.out.println(edgeHashMap.keySet());
         List<Coordinate> newList = new ArrayList<>();
         int t = vertexList.toArray().length;
         for (int i = 0;i<t-1;i++){
-            System.out.println(iterator.next());
 
 
             Node p1 = vertexList.get(i);
@@ -40,5 +38,25 @@ public class shortestPath2Coordinate {
 
         }
         return newList;
+    }
+    public static Coordinate calculateProjection(double x1, double y1, double x2, double y2, double x, double y) {
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+
+        double t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
+
+        double projX, projY;
+        if (t < 0) {
+            projX = x1;
+            projY = y1;
+        } else if (t > 1) {
+            projX = x2;
+            projY = y2;
+        } else {
+            projX = x1 + t * dx;
+            projY = y1 + t * dy;
+        }
+
+        return new Coordinate(projX, projY);
     }
 }

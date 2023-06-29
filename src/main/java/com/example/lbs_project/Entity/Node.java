@@ -9,7 +9,9 @@ public class Node {
         @Getter @Setter private Double north;
         @Getter @Setter private Double lat;
         @Getter @Setter private Double lon;
+        public Node(){
 
+        }
         public Node(String osmid, Double east, Double north,Double lat, Double lon) {
             this.osmid = osmid;
             this.east = east;

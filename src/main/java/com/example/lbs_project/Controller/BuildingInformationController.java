@@ -30,17 +30,12 @@ public class BuildingInformationController {
     @GetMapping("/info")
     public ResponseEntity getInfo(@Valid @RequestParam Double x,@Valid @RequestParam Double y,@Valid @RequestParam UUID pathId ) throws IOException {
 
-      System.out.println(pathId);
       List<Coordinate> coords = RouteDataStorage.getCoordinates(pathId);
-      System.out.println(x);
-      System.out.println(y);
-      System.out.println(pathId);
-      System.out.println(coords);
+
       try{
           return new ResponseEntity(infoService.getNearestBuildingInformation(x,y,coords),HttpStatus.OK);
 
       }catch (Exception e){
-          System.out.println(e);
           e.printStackTrace();
           return new ResponseEntity("Something Wrong", HttpStatus.BAD_REQUEST);
       }

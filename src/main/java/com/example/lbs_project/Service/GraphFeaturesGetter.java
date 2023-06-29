@@ -13,10 +13,10 @@ public class GraphFeaturesGetter {
 
 
     public static GraphFeatures getGraphFeatrues() throws IOException {
-        String edgeFilePath = "/Users/sefahmet/Desktop/2. Semester/LBS/Last Data/edges_ne.shp";
-        String nodeFilePath = "/Users/sefahmet/Desktop/2. Semester/LBS/Last Data/nodes_ne.shp";
+        String edgeFilePath = "src/main/resources/Data/edges_ne.shp";
+        String nodeFilePath = "src/main/resources/Data/nodes_ne.shp";
         GraphFeatures graphFeatures= createGraphNodeAndEdgeFile(edgeFilePath,nodeFilePath);
-        SimpleFeatureCollection building = shapeFileReader("/Users/sefahmet/Desktop/2. Semester/LBS/Last Data/Buildings.shp");
+        SimpleFeatureCollection building = shapeFileReader("src/main/resources/Data/Buildings.shp");
         graphFeatures.setBuilding(building);
         System.out.println("I am loading Data");
         return graphFeatures;

@@ -13,7 +13,10 @@ import org.locationtech.jts.geom.MultiLineString;
 import org.opengis.feature.simple.SimpleFeature;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 import static com.example.lbs_project.Format.ReadSHPFiles.shapeFileReader;
 
@@ -63,10 +66,9 @@ public class CreateGraphFeature {
             while (iterator.hasNext()) {
                 SimpleFeature feature = iterator.next();
                 MultiLineString lineString = (MultiLineString) feature.getAttribute("the_geom");
-
                 List<Coordinate> coords = List.of(lineString.getCoordinates());
-                String fid = String.valueOf(feature.getAttribute("fid"));
 
+                String fid = String.valueOf(feature.getAttribute("fid"));
 
                 String name = String.valueOf(feature.getAttribute("name"));
                 String u_id = String.valueOf(feature.getAttribute("u"));
@@ -77,30 +79,56 @@ public class CreateGraphFeature {
                 List<String> vu = new ArrayList<>();
                 vu.add(v_id);
                 vu.add(u_id);
-
                 Node u =nodeHashMap.get(u_id);
                 Node v =nodeHashMap.get(v_id);
+               if(Math.abs(u.getEast()-coords.get(0).getX())>0.01){
+                    if(Math.abs(u.getEast()-coords.get(coords.size()-1).getX())<0.01){
+                        coords = reverseList(coords);
+                    }else{
+                        System.out.println(fid+" "+ "false check others");
+                    }
+
+                }
                 name = ((name.isEmpty()) ? null : name);
 
                 Double distance = 0.0;
+
                 for (int i = 0; i<lineString.getNumPoints()-1;i++) {
                     Coordinate p1 = coords.get(i);
                     Coordinate p2 = coords.get(i+1);
                     distance += Math.hypot(p1.getX()-p2.getX(),p1.getY()-p2.getY());
-                }
 
+                }
                 Edge edge = new Edge(fid,u_id,v_id,u,v,distance,coords,name);
                 DefaultWeightedEdge graphEdge = graph.addEdge(u, v);
-                graph.setEdgeWeight(graphEdge,edge.getDistance());
-                Edge reverseEdge = new Edge(fid,v_id,u_id,v,u,distance, reverseList(coords),name);
+                if (graphEdge!=null){
+                    graph.setEdgeWeight(graphEdge,edge.getDistance());
+                    edgeHashMap.put(uv,edge);
+                }else{
+                    Edge oldEdge = edgeHashMap.get(uv);
+                    if (oldEdge.getDistance()>edge.getDistance()){
+                        edgeHashMap.get(uv).setDistance(edge.getDistance());
+                        edgeHashMap.get(uv).setEdgeCoordinates(edge.getEdgeCoordinates());
+                        edgeHashMap.get(uv).setFid(edge.getFid());
+                        graph.setEdgeWeight(graph.getEdge(u,v),edge.getDistance());
+                    }
+
+                }
+                String reverseFid = String.valueOf(10000.0 - Double.valueOf(fid));
+                Edge reverseEdge = new Edge(reverseFid,v_id,u_id,v,u,distance, reverseList(coords),name);
                 DefaultWeightedEdge graphReverseEdge = graph.addEdge(v, u);
-                graph.setEdgeWeight(graphReverseEdge,edge.getDistance());
+                if (graphReverseEdge!=null){
+                    graph.setEdgeWeight(graphReverseEdge,edge.getDistance());
+                    edgeHashMap.put(vu,reverseEdge);
+                }else{
+                    Edge oldEdge = edgeHashMap.get(vu);
+                    if (oldEdge.getDistance()>reverseEdge.getDistance()){
+                        edgeHashMap.get(vu).setDistance(reverseEdge.getDistance());
+                        edgeHashMap.get(vu).setEdgeCoordinates(reverseEdge.getEdgeCoordinates());
+                        graph.setEdgeWeight(graph.getEdge(v,u),reverseEdge.getDistance());
+                    }
 
-                edgeHashMap.put(uv,edge);
-                edgeHashMap.put(vu,reverseEdge);
-
-
-
+                }
 
             }
             iterator.close();

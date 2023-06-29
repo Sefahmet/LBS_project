@@ -1,8 +1,10 @@
 package com.example.lbs_project.Service;
 
 import com.example.lbs_project.DataHolder.MyDataSingleton;
+import com.example.lbs_project.Entity.Edge;
 import com.example.lbs_project.Entity.GraphFeatures;
 import com.example.lbs_project.Entity.Node;
+import com.example.lbs_project.Format.shortestPath2Coordinate;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
@@ -10,9 +12,7 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.locationtech.jts.geom.Coordinate;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class ShortestPathService {
@@ -37,10 +37,30 @@ public class ShortestPathService {
             // En kısa yolu hesapla
             DijkstraShortestPath<Node, DefaultWeightedEdge> shortestPathAlg = new DijkstraShortestPath<>(graph);
             // Get closest node on graph
-            Node startNode = getClosestNode(graphFeatures.getNodeHashMap(),start);
-            Node endNode = getClosestNode(graphFeatures.getNodeHashMap(),end);
-            GraphPath<Node, DefaultWeightedEdge> shortestPath = shortestPathAlg.getPath(startNode,endNode);
-            data.setShortestPath(shortestPath);
+            Node[] nodes = getClosestNode(graphFeatures.getEdgeHashMap(),start);
+            Node startNode1 = nodes[0];
+            Node startNode2 = nodes[1];
+            Node[]endNodes = getClosestNode(graphFeatures.getEdgeHashMap(),end);
+            Node endNode1 = endNodes[0];
+            Node endNode2 = endNodes[1];
+
+            GraphPath<Node, DefaultWeightedEdge> shortestPath11 = shortestPathAlg.getPath(startNode1,endNode1);
+            GraphPath<Node, DefaultWeightedEdge> shortestPath21 = shortestPathAlg.getPath(startNode2,endNode1);
+            GraphPath<Node, DefaultWeightedEdge> shortestPath12 = shortestPathAlg.getPath(startNode1,endNode2);
+            GraphPath<Node, DefaultWeightedEdge> shortestPath22 = shortestPathAlg.getPath(startNode2,endNode2);
+            double w1 = shortestPath11.getWeight();
+            double w2 = shortestPath12.getWeight();
+            double w3 = shortestPath21.getWeight();
+            double w4 = shortestPath22.getWeight();
+            if (Math.min(w1,w2)<Math.min(w3,w4)){
+                data.setShortestPath(shortestPath11);
+            }else if(Math.min(w2,w1)<Math.min(w3,w4)){
+                data.setShortestPath(shortestPath12);
+            }else if(Math.min(w3,w1)<Math.min(w2,w4)){
+                data.setShortestPath(shortestPath21);
+            }else{
+                data.setShortestPath(shortestPath22);
+            }
             return data;
         }catch (Exception e){
             System.out.println(e);
@@ -49,21 +69,66 @@ public class ShortestPathService {
 
         return null;
     }
-    private static Node getClosestNode( HashMap<String, Node> nodeHashMap,Coordinate point){
-        Double distance= Double.POSITIVE_INFINITY;
-        Node resNode=null;
-        for (String key:nodeHashMap.keySet()
-             ) {
-            Node testNode = nodeHashMap.get(key);
-            Double d =Math.hypot(testNode.getEast()-point.getX(),
-                    testNode.getNorth()-point.getY());
-            if(d<distance){
-                distance = d;
-                resNode = testNode;
-                //System.out.println(resNode.getEast() +" " + resNode.getNorth()+ " " + d);
-            }
+    public static List<String> getEdgeIds (MyDataSingleton data){
+        List<Node> nodes = data.getShortestPath().getVertexList();
+        List<String> fids = new ArrayList<>();
+        for (int i =0;i< nodes.size()-1;i++
+        ) {
+            List<String> ids = new ArrayList<>();
 
+            String u_id=  nodes.get(i).getOsmid();
+            String v_id=  nodes.get(i+1).getOsmid();
+            ids.add(u_id);
+            ids.add(v_id);
+
+            System.out.println(data.getGraphFeatures().getEdgeHashMap().get(ids).getFid());
+            fids.add(data.getGraphFeatures().getEdgeHashMap().get(ids).getFid());
         }
-        return resNode;
+        return fids;
+    }
+    public static Node[] getClosestNode(HashMap<List<String>, Edge> edgeHashMap, Coordinate point){
+        Double distance= Double.POSITIVE_INFINITY;
+        Node[] res = new Node[2];
+        for (List<String> key:edgeHashMap.keySet()
+             ) {
+            Edge testEdge = edgeHashMap.get(key);
+            Node p1 = testEdge.getU();
+            Node p2 = testEdge.getV();
+            double d = BuildingInformationService.distanceEdge2Point(p2.getEast(),p2.getNorth(),
+                                                                     p1.getEast(),p1.getNorth(),
+                                                                     point.getX(),point.getY());
+            if (d<distance){
+                distance = d;
+                double d1 = Math.hypot(point.getX()- p1.getEast(),point.getY()- p1.getNorth());
+                double d2 = Math.hypot(point.getX()- p2.getEast(),point.getY()- p2.getNorth());
+
+                res[0] = p1;
+                res[1] = p2;
+
+            }
+        }
+        return res;
+    }
+
+    public static MyDataSingleton shortestPath2VisualCoords(MyDataSingleton data,double x1,double y1,double x2,double y2,List<Coordinate> coords){
+        Node[] entryEdge = getClosestNode(data.getGraphFeatures().getEdgeHashMap(), new Coordinate(x1,y1));
+        Node[] exitEdge =  getClosestNode(data.getGraphFeatures().getEdgeHashMap(), new Coordinate(x2,y2));
+        Node last =  exitEdge[0];
+        Node last1 = exitEdge[1];
+        Node first = entryEdge[0];
+        Node second = entryEdge[1];
+
+        Coordinate entryPoint = shortestPath2Coordinate.calculateProjection(first.getEast(), first.getNorth(),
+                second.getEast(), second.getNorth(),
+                x1,y1);
+        Coordinate exitPoint = shortestPath2Coordinate.calculateProjection(last.getEast(), last.getNorth(),
+                last1.getEast(), last1.getNorth(),
+                x2,y2);
+        coords.add(0,new Coordinate(entryPoint.getX(),entryPoint.getY()));
+        coords.add(new Coordinate(exitPoint.getX(),exitPoint.getY()));
+        coords.add(0,new Coordinate(x1,y1));
+        coords.add(new Coordinate(x2,y2));
+
+        return data;
     }
 }
