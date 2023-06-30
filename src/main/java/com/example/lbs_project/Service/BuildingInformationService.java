@@ -1,10 +1,12 @@
 package com.example.lbs_project.Service;
 
 import com.example.lbs_project.DataHolder.MyDataSingleton;
+import com.example.lbs_project.Entity.Edge;
 import org.locationtech.jts.geom.Coordinate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 import static com.example.lbs_project.Format.BuildingInformation.getClosestBuildingsInformations;
@@ -44,20 +46,49 @@ public class BuildingInformationService {
         int size = shortestPath.size();
         Double distance = Double.POSITIVE_INFINITY;
         Coordinate direction = new Coordinate(0,0);
+        Coordinate source = new Coordinate(0,0);
         for (int i = 0 ; i<size-1;i++){
             Coordinate p1 = shortestPath.get(i);
             Coordinate p2 = shortestPath.get(i+1);
             double d = distanceEdge2Point(p1.getX(),p1.getY(), p2.getX(), p2.getY(), x,y);
             if (d<distance){
                 distance = d;
+                source = p1;
                 direction = p2;
+
             }
         }
-
         MyDataSingleton data = new MyDataSingleton();
+        String streenName = getStreetName(source,direction,data.getGraphFeatures().getEdgeHashMap());
         String Message = getClosestBuildingsInformations(data.getGraphFeatures().getBuilding(),new Coordinate(x,y),direction);
+        System.out.println(streenName);
+        if (streenName != null){
+            Message = "You are on the "+ streenName+ " Street." + Message;
+        }
         return Message;
 
 
+    }
+    public String getStreetName(Coordinate p1, Coordinate p2, HashMap<List<String>, Edge> edgeHashMap){
+        boolean flag1 = false;
+        String streetName = "";
+        for (List<String> edgeKey: edgeHashMap.keySet()) {
+            Edge edge = edgeHashMap.get(edgeKey);
+            List<Coordinate> coordinates = edge.getEdgeCoordinates();
+            for (int i =0; i<coordinates.size()-1;i++){
+                Coordinate ep1 = coordinates.get(i);
+                Coordinate ep2 = coordinates.get(i+1);
+
+                if ((ep1==p1 & ep2 == p2)| (ep1==p2 & ep2 == p1)){
+                    flag1 = true;
+                    streetName = edge.getStreetName();
+                }
+            }
+            if (flag1){
+                break;
+            }
+
+        }
+        return streetName;
     }
 }

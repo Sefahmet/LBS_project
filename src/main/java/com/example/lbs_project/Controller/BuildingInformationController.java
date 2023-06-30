@@ -31,6 +31,7 @@ public class BuildingInformationController {
     public ResponseEntity getInfo(@Valid @RequestParam Double x,@Valid @RequestParam Double y,@Valid @RequestParam UUID pathId ) throws IOException {
 
       List<Coordinate> coords = RouteDataStorage.getCoordinates(pathId);
+      coords.stream().forEach(System.out::println);
 
       try{
           return new ResponseEntity(infoService.getNearestBuildingInformation(x,y,coords),HttpStatus.OK);

@@ -2,10 +2,8 @@ package com.example.lbs_project.Controller;
 
 import com.example.lbs_project.DataHolder.MyDataSingleton;
 import com.example.lbs_project.DataHolder.RouteDataStorage;
-import com.example.lbs_project.Entity.Node;
 import com.example.lbs_project.Entity.Path;
 import com.example.lbs_project.Entity.PointEnt;
-import com.example.lbs_project.Format.shortestPath2Coordinate;
 import com.example.lbs_project.Service.ShortestPathService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,30 +47,68 @@ public class ShortestPathController {
         MyDataSingleton data = shortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
 
 
-        List<Coordinate> coords = shortestPath2Coordinate.converter(data);
+        List<Coordinate> coords = ShortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
+        for (Coordinate coord: coords
+        ) {
+            shortestPathService.EN2LatLon(coord.getX(),coord.getY());
 
-        Node[] entryEdge =  shortestPathService.getClosestNode(data.getGraphFeatures().getEdgeHashMap(), new Coordinate(x1,y1));
-        Node[] exitEdge =  shortestPathService.getClosestNode(data.getGraphFeatures().getEdgeHashMap(), new Coordinate(x2,y2));
-        Node last =  exitEdge[0];
-        Node last1 = exitEdge[1];
-        Node first = entryEdge[0];
-        Node second = entryEdge[1];
-
-        Coordinate entryPoint = shortestPath2Coordinate.calculateProjection(first.getEast(), first.getNorth(),
-                second.getEast(), second.getNorth(),
-                x1,y1);
-        Coordinate exitPoint = shortestPath2Coordinate.calculateProjection(last.getEast(), last.getNorth(),
-                last1.getEast(), last1.getNorth(),
-                x2,y2);
-        coords.add(0,new Coordinate(entryPoint.getX(),entryPoint.getY()));
-        coords.add(new Coordinate(exitPoint.getX(),exitPoint.getY()));
-        coords.add(0,new Coordinate(x1,y1));
-        coords.add(new Coordinate(x2,y2));
-
-
+        }
         UUID pathId = UUID.randomUUID();
         RouteDataStorage.getInstance().put(pathId,coords);
         Path responsePath = new Path(pathId,coords);
+        return new ResponseEntity(responsePath, HttpStatus.OK);
+    }
+    @GetMapping(value = "/getLatLon")
+    public ResponseEntity<Path> getShortestPathCoordinatesLatLon(@Valid @RequestBody PointEnt shortestPathParameters) throws IOException{
+
+
+        double x1 = shortestPathParameters.getX1();
+        double y1 = shortestPathParameters.getY1();
+        double x2 = shortestPathParameters.getX2();
+        double y2 = shortestPathParameters.getY2();
+        MyDataSingleton data = shortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
+
+
+        List<Coordinate> coords = ShortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
+        List<Coordinate> rescoords = new ArrayList<>();
+        for (Coordinate coord: coords
+        ) {
+            rescoords.add(shortestPathService.EN2LatLon(coord.getX(),coord.getY()));
+        }
+        System.out.println("finish");
+        UUID pathId = UUID.randomUUID();
+        RouteDataStorage.getInstance().put(pathId,coords);
+        Path responsePath = new Path(pathId,rescoords);
+        return new ResponseEntity(responsePath, HttpStatus.OK);
+    }
+    @GetMapping(value = "/shortest-path")
+    public ResponseEntity<Path> getShortestPathWLatLon(@Valid @RequestBody PointEnt shortestPathParameters) throws IOException{
+
+
+        double lat1 = shortestPathParameters.getX1();
+        double lon1 = shortestPathParameters.getY1();
+        double lat2 = shortestPathParameters.getX2();
+        double lon2 = shortestPathParameters.getY2();
+        Coordinate p1 =  shortestPathService.LatLon2EN(lat1,lon1);
+        Coordinate p2 =  shortestPathService.LatLon2EN(lat2,lon2);
+
+        double x1 = p1.getX();
+        double y1 = p1.getY();
+        double x2 = p2.getX();
+        double y2 = p2.getY();
+        MyDataSingleton data = shortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
+
+
+        List<Coordinate> coords = ShortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
+        List<Coordinate> rescoords = new ArrayList<>();
+        for (Coordinate coord: coords
+        ) {
+            rescoords.add(shortestPathService.EN2LatLon(coord.getX(),coord.getY()));
+        }
+        System.out.println("finish");
+        UUID pathId = UUID.randomUUID();
+        RouteDataStorage.getInstance().put(pathId,coords);
+        Path responsePath = new Path(pathId,rescoords);
         return new ResponseEntity(responsePath, HttpStatus.OK);
     }
     @GetMapping(value = "/gettest")
@@ -83,7 +120,12 @@ public class ShortestPathController {
 
         MyDataSingleton data = ShortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
 
-        List<Coordinate> coords = shortestPath2Coordinate.converter(data);
+        List<Coordinate> coords = shortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
+        for (Coordinate coord: coords
+             ) {
+            shortestPathService.EN2LatLon(coord.getX(),coord.getY());
+
+        }
         UUID pathId = UUID.randomUUID();
         RouteDataStorage.getInstance().put(pathId,coords);
         Path responsePath = new Path(pathId,coords);
@@ -98,7 +140,7 @@ public class ShortestPathController {
 
         MyDataSingleton data = ShortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
         List<String> fid = shortestPathService.getEdgeIds(data);
-        List<Coordinate> coords = shortestPath2Coordinate.converter(data);
+        List<Coordinate> coords = shortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
         UUID pathId = UUID.randomUUID();
         RouteDataStorage.getInstance().put(pathId,coords);
         Path responsePath = new Path(pathId,fid);
@@ -114,7 +156,7 @@ public class ShortestPathController {
         double y2 = shortestPathParameters.getY2();
         MyDataSingleton data = shortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
         List<String> fids = shortestPathService.getEdgeIds(data);
-        List<Coordinate> coords = shortestPath2Coordinate.converter(data);
+        List<Coordinate> coords = shortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
         UUID pathId = UUID.randomUUID();
         RouteDataStorage.getInstance().put(pathId,coords);
         Path responsePath = new Path(pathId,fids);

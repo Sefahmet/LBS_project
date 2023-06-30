@@ -5,12 +5,15 @@ import com.example.lbs_project.Entity.Edge;
 import com.example.lbs_project.Entity.GraphFeatures;
 import com.example.lbs_project.Entity.Node;
 import com.example.lbs_project.Format.shortestPath2Coordinate;
+import geotrellis.proj4.CRS;
+import geotrellis.proj4.Transform;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.locationtech.jts.geom.Coordinate;
 import org.springframework.stereotype.Service;
+import scala.Tuple2;
 
 import java.util.*;
 
@@ -81,7 +84,6 @@ public class ShortestPathService {
             ids.add(u_id);
             ids.add(v_id);
 
-            System.out.println(data.getGraphFeatures().getEdgeHashMap().get(ids).getFid());
             fids.add(data.getGraphFeatures().getEdgeHashMap().get(ids).getFid());
         }
         return fids;
@@ -110,7 +112,8 @@ public class ShortestPathService {
         return res;
     }
 
-    public static MyDataSingleton shortestPath2VisualCoords(MyDataSingleton data,double x1,double y1,double x2,double y2,List<Coordinate> coords){
+    public static List<Coordinate> shortestPath2VisualCoords(MyDataSingleton data,double x1,double y1,double x2,double y2){
+        List<Coordinate> coords = shortestPath2Coordinate.converter(data);
         Node[] entryEdge = getClosestNode(data.getGraphFeatures().getEdgeHashMap(), new Coordinate(x1,y1));
         Node[] exitEdge =  getClosestNode(data.getGraphFeatures().getEdgeHashMap(), new Coordinate(x2,y2));
         Node last =  exitEdge[0];
@@ -129,6 +132,32 @@ public class ShortestPathService {
         coords.add(0,new Coordinate(x1,y1));
         coords.add(new Coordinate(x2,y2));
 
-        return data;
+
+        return coords;
+    }
+    public static Coordinate EN2LatLon (double x,double y){
+
+
+        CRS epsg3044 = CRS.fromEpsgCode(3044);
+        CRS wgs84 = CRS.fromEpsgCode(4326);
+
+        var toWgs84 = Transform.apply(epsg3044, wgs84);
+
+
+        Tuple2<Object, Object> EN2LatLon = toWgs84.apply(x,y);
+
+        return new Coordinate((double)EN2LatLon._1(),(double)EN2LatLon._2());
+
+
+    }
+    public static Coordinate LatLon2EN (double lat,double lon){
+
+        CRS epsg3044 = CRS.fromEpsgCode(3044);
+        CRS wgs84 = CRS.fromEpsgCode(4326);
+        var fromWgs84 = Transform.apply(wgs84, epsg3044);
+        Tuple2<Object, Object> latlon2EN = fromWgs84.apply(lat  , lon);
+        return new Coordinate((double) latlon2EN._1(),(double) latlon2EN._2());
+
+
     }
 }
