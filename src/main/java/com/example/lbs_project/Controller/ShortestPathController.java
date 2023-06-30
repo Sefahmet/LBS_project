@@ -105,7 +105,6 @@ public class ShortestPathController {
         ) {
             rescoords.add(shortestPathService.EN2LatLon(coord.getX(),coord.getY()));
         }
-        System.out.println("finish");
         UUID pathId = UUID.randomUUID();
         RouteDataStorage.getInstance().put(pathId,coords);
         Path responsePath = new Path(pathId,rescoords);
