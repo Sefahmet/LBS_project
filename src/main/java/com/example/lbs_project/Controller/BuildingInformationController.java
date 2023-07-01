@@ -43,10 +43,13 @@ public class BuildingInformationController {
     @GetMapping("/infoLatLon")
     public ResponseEntity getInfoWithLatLon(@Valid @RequestParam Double lat,@Valid @RequestParam Double lon,@Valid @RequestParam UUID pathId ) throws IOException {
         Coordinate p = ShortestPathService.LatLon2EN(lat,lon);
+
         double x = p.getX();
         double y = p.getY();
+        System.out.println(lat+ " "+ lon);
+        System.out.println(x+ " "+ y);
         List<Coordinate> coords = RouteDataStorage.getCoordinates(pathId);
-        coords.stream().forEach(System.out::println);
+
 
         try{
             return new ResponseEntity(infoService.getNearestBuildingInformation(x,y,coords),HttpStatus.OK);

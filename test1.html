@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shortest Path Finder</title>
+  <meta charset="utf-8">
+  <style>
+    /* Harita container'ı */
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/openlayers@latest/dist/ol.js"></script>
+</head>
+<body>
+<h2>Shortest Path Finder</h2>
+<div>
+  <label for="coord1">Koordinat 1:</label>
+  <input type="text" id="coord1">
+  <br>
+  <label for="coord2">Koordinat 2:</label>
+  <input type="text" id="coord2">
+  <br>
+  <button onclick="findShortestPath()">Find Path</button>
+</div>
+<br>
+<div id="map"></div>
+<button id="selectPointButton" style="display: none;">Select Point</button>
+
+<script>
+  var map;
+  var coord1Input = document.getElementById("coord1");
+  var coord2Input = document.getElementById("coord2");
+  var marker1;
+  var marker2;
+  var line;
+  var pathId;
+
+  function initMap() {
+    map = new ol.Map({
+      target: 'map',
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      view: new ol.View({
+        center: ol.proj.fromLonLat([7.0872836708478305, 50.72699512506559]),
+        zoom: 14
+      })
+    });
+
+    // Tıklama işlevi
+    map.on("click", function (e) {
+      var position = ol.proj.toLonLat(e.coordinate);
+      if (!marker1) {
+        marker1 = new ol.Feature({
+          geometry: new ol.geom.Point(e.coordinate)
+        });
+        var markerLayer = new ol.layer.Vector({
+          source: new ol.source.Vector({
+            features: [marker1]
+          })
+        });
+        map.addLayer(markerLayer);
+        coord1Input.value = position[0].toFixed(7) + "," + position[1].toFixed(7);
+      } else if (!marker2) {
+        marker2 = new ol.Feature({
+          geometry: new ol.geom.Point(e.coordinate)
+        });
+        var markerLayer = new ol.layer.Vector({
+          source: new ol.source.Vector({
+            features: [marker2]
+          })
+        });
+        map.addLayer(markerLayer);
+        coord2Input.value = position[0].toFixed(7) + "," + position[1].toFixed(7);
+      } else {
+        marker1.getGeometry().setCoordinates(e.coordinate);
+        coord1Input.value = position[0].toFixed(7) + "," + position[1].toFixed(7);
+      }
+    });
+  }
+
+  function findShortestPath() {
+    var coord1 = coord1Input.value.split(",");
+    var coord2 = coord2Input.value.split(",");
+    var lat1 = parseFloat(coord1[0]);
+    var lon1 = parseFloat(coord1[1]);
+    var lat2 = parseFloat(coord2[0]);
+    var lon2 = parseFloat(coord2[1]);
+    // API'ye istek gönder
+
+    const url = `http://localhost:8080/api/shortestPath/shortest-path-params?lat1=${lat1}&lon1=${lon1}&lat2=${lat2}&lon2=${lon2}`;
+
+    fetch(url)
+            .then(response => {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error('API isteği başarısız oldu.');
+              }
+            })
+            .then(data => {
+              // İşlenecek verileri burada kullanabilirsiniz
+              console.log('API cevabı:', data);
+              console.log(url);
+
+              // Yolu haritada çiz
+              pathId = data.pathId;
+              drawPath(data.coordinates);
+            })
+            .catch(error => {
+              console.error('API isteği sırasında bir hata oluştu:', error);
+            });
+  }
+
+  function drawPath(path) {
+    if (line) {
+      map.removeLayer(line);
+    }
+
+    var points = [];
+    for (var i = 0; i < path.length; i++) {
+      var coord = path[i];
+      if (coord.valid) {
+        var point = ol.proj.fromLonLat([coord.x, coord.y]);
+        points.push(point);
+      }
+    }
+
+    var lineString = new ol.geom.LineString(points);
+    var lineFeature = new ol.Feature({
+      geometry: lineString
+    });
+
+    var lineStyle = new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: '#0022ff',
+        width: 2,
+        opacity: 1
+      })
+    });
+    lineFeature.setStyle(lineStyle);
+
+    var vectorSource = new ol.source.Vector({
+      features: [lineFeature]
+    });
+
+    line = new ol.layer.Vector({
+      source: vectorSource
+    });
+
+    map.addLayer(line);
+
+    // Path çizildikten sonra selectPointButton'u görünür hale getir
+    document.getElementById("selectPointButton").style.display = "block";
+  }
+
+  var selectPointButton = document.getElementById("selectPointButton");
+  selectPointButton.addEventListener("click", function () {
+    // Kullanıcıdan nokta seçmesini isteyin
+    map.on("click", function (e) {
+      var position = ol.proj.toLonLat(e.coordinate);
+      var lat = position[0];
+      var lon = position[1];
+
+      // PathId ve kullanıcının seçtiği noktanın koordinatlarıyla yeni bir API isteği gönderin
+      const infoUrl = `http://localhost:8080/api/building/infoLatLon?pathId=${pathId}&lat=${lat}&lon=${lon}`;
+      console.log(pathId)
+      fetch(infoUrl)
+              .then(response => {
+                if (response.ok) {
+                  return response.text();
+                } else {
+                  throw new Error('API isteği başarısız oldu.');
+                }
+              })
+              .then(data => {
+                // Dönen bilgiyi konsola yazdır
+                console.log('API cevabı:', data);
+                speak(data);
+              })
+              .catch(error => {
+                console.error('API isteği sırasında bir hata oluştu:', error);
+              });
+    });
+
+  });
+  function speak(text) {
+    if ('speechSynthesis' in window) {
+      var msg = new SpeechSynthesisUtterance();
+      msg.text = text;
+      window.speechSynthesis.speak(msg);
+    } else {
+      console.error('Tarayıcınız Web Speech API desteklemiyor.');
+    }
+  }
+  initMap();
+</script>
+</body>
+</html>
