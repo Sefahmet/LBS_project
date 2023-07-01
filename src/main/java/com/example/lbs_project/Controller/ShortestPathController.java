@@ -11,10 +11,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -26,6 +23,7 @@ import java.util.UUID;
 @Validated
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin
 @RequestMapping("/api/shortestPath")
 
 public class ShortestPathController {
@@ -81,6 +79,30 @@ public class ShortestPathController {
         Path responsePath = new Path(pathId,rescoords);
         return new ResponseEntity(responsePath, HttpStatus.OK);
     }
+
+    @GetMapping(value = "/getLatLonTest")
+    public ResponseEntity<Path> getShortestPathCoordinatesLatLonTest() throws IOException{
+        double x1 = 365288.50596542074;
+        double y1 = 5621068.13241898;
+        double x2 = 364640.0;
+        double y2 = 5621281.0;
+
+
+        MyDataSingleton data = shortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
+
+
+        List<Coordinate> coords = ShortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
+        List<Coordinate> rescoords = new ArrayList<>();
+        for (Coordinate coord: coords
+        ) {
+            rescoords.add(shortestPathService.EN2LatLon(coord.getX(),coord.getY()));
+        }
+        System.out.println("finish");
+        UUID pathId = UUID.randomUUID();
+        RouteDataStorage.getInstance().put(pathId,coords);
+        Path responsePath = new Path(pathId,rescoords);
+        return new ResponseEntity(responsePath, HttpStatus.OK);
+    }
     @GetMapping(value = "/shortest-path")
     public ResponseEntity<Path> getShortestPathWLatLon(@Valid @RequestBody PointEnt shortestPathParameters) throws IOException{
 
@@ -89,6 +111,34 @@ public class ShortestPathController {
         double lon1 = shortestPathParameters.getY1();
         double lat2 = shortestPathParameters.getX2();
         double lon2 = shortestPathParameters.getY2();
+        Coordinate p1 =  shortestPathService.LatLon2EN(lat1,lon1);
+        Coordinate p2 =  shortestPathService.LatLon2EN(lat2,lon2);
+
+        double x1 = p1.getX();
+        double y1 = p1.getY();
+        double x2 = p2.getX();
+        double y2 = p2.getY();
+        MyDataSingleton data = shortestPathService.getShortestPathCoordinates(x1, y1, x2, y2);
+
+
+        List<Coordinate> coords = ShortestPathService.shortestPath2VisualCoords(data,x1, y1, x2, y2);
+        List<Coordinate> rescoords = new ArrayList<>();
+        for (Coordinate coord: coords
+        ) {
+            rescoords.add(shortestPathService.EN2LatLon(coord.getX(),coord.getY()));
+        }
+        UUID pathId = UUID.randomUUID();
+        RouteDataStorage.getInstance().put(pathId,coords);
+        Path responsePath = new Path(pathId,rescoords);
+        return new ResponseEntity(responsePath, HttpStatus.OK);
+    }
+    @GetMapping(value = "/shortest-path-params")
+    public ResponseEntity<Path> getShortestPathWLatLon(@Valid @RequestParam double lat1,
+                                                       @Valid @RequestParam double lon1,
+                                                       @Valid @RequestParam double lat2,
+                                                         @Valid @RequestParam double lon2) throws IOException{
+
+
         Coordinate p1 =  shortestPathService.LatLon2EN(lat1,lon1);
         Coordinate p2 =  shortestPathService.LatLon2EN(lat2,lon2);
 
