@@ -122,7 +122,7 @@
                 </configuration>
             </plugin>
 
-            <!--<plugin>
+            <plugin>
                 <groupId>org.apache.tomcat.maven</groupId>
                 <artifactId>tomcat7-maven-plugin</artifactId>
                 <version>2.2</version>
@@ -131,8 +131,8 @@
                     <server>localtest</server>
                     <path>/routing2023_ASA</path>
                 </configuration>
-            </plugin>-->
-            <plugin>
+            </plugin>
+         <!--   <plugin>
                 <groupId>org.apache.tomcat.maven</groupId>
                 <artifactId>tomcat7-maven-plugin</artifactId>
                 <version>2.2</version>
@@ -141,7 +141,7 @@
                     <server>lbs2023</server>
                     <path>/routing2023_ASA</path>
                 </configuration>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
     <repositories>
