@@ -61,7 +61,6 @@ public class BuildingInformationService {
         MyDataSingleton data = new MyDataSingleton();
         String streenName = getStreetName(source,direction,data.getGraphFeatures().getEdgeHashMap());
         String Message = getClosestBuildingsInformations(data.getGraphFeatures().getBuilding(),new Coordinate(x,y),direction);
-        System.out.println(streenName);
         if (streenName != null){
             Message = "You are on the "+ streenName+ " Street." + Message;
         }

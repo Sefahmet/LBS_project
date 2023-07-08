@@ -24,13 +24,16 @@ import java.util.UUID;
 @RequestMapping("/api/building")
 public class BuildingInformationController {
     private  final BuildingInformationService infoService;
+
     @GetMapping()
-    public ResponseEntity welcome(){return new ResponseEntity("welcome", HttpStatus.OK);}
+    public ResponseEntity welcome() throws IOException {
+        String res = "directoryCheck.getDirectoryLocation()";
+        return new ResponseEntity(res+" welcome", HttpStatus.OK);}
+
     @GetMapping("/info")
     public ResponseEntity getInfo(@Valid @RequestParam Double x,@Valid @RequestParam Double y,@Valid @RequestParam UUID pathId ) throws IOException {
 
       List<Coordinate> coords = RouteDataStorage.getCoordinates(pathId);
-      coords.stream().forEach(System.out::println);
 
       try{
           return new ResponseEntity(infoService.getNearestBuildingInformation(x,y,coords),HttpStatus.OK);
@@ -46,8 +49,7 @@ public class BuildingInformationController {
 
         double x = p.getX();
         double y = p.getY();
-        System.out.println(lat+ " "+ lon);
-        System.out.println(x+ " "+ y);
+
         List<Coordinate> coords = RouteDataStorage.getCoordinates(pathId);
 
 

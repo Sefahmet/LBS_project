@@ -1,57 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Shortest Path Finder</title>
-  <meta charset="utf-8">
-  <style>
-    /* Harita container'ı */
-    #map {
-      height: 400px;
-      width: 100%;
-    }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/openlayers@latest/dist/ol.js"></script>
-</head>
-<body>
-<h2>Shortest Path Finder</h2>
-<div>
-  <label for="coord1">Koordinat 1:</label>
-  <input type="text" id="coord1">
-  <br>
-  <label for="coord2">Koordinat 2:</label>
-  <input type="text" id="coord2">
-  <br>
-  <button onclick="findShortestPath()">Find Path</button>
-</div>
-<br>
-<div id="map"></div>
-<button id="selectPointButton" style="display: none;">Select Point</button>
+ var map;
+ var coord1Input = document.getElementById("coord1");
+ var coord2Input = document.getElementById("coord2");
+ var marker1;
+ var marker2;
+ var line;
+ var pathId;
+ var minx = ol.proj.transform([7.081, 50.723], "EPSG:4326", "EPSG:3857")[0];
+ var miny = ol.proj.transform([7.081, 50.723], "EPSG:4326", "EPSG:3857")[1];
+ var maxx = ol.proj.transform([7.093, 50.730], "EPSG:4326", "EPSG:3857")[0];
+ var maxy = ol.proj.transform([7.093, 50.730], "EPSG:4326", "EPSG:3857")[1];
 
-<script>
-  var map;
-  var coord1Input = document.getElementById("coord1");
-  var coord2Input = document.getElementById("coord2");
-  var marker1;
-  var marker2;
-  var line;
-  var pathId;
 
-  function initMap() {
-    map = new ol.Map({
-      target: 'map',
-      layers: [
-        new ol.layer.Tile({
-          source: new ol.source.OSM()
-        })
-      ],
-      view: new ol.View({
-        center: ol.proj.fromLonLat([7.0872836708478305, 50.72699512506559]),
-        zoom: 14
-      })
-    });
+tile_layer = new ol.layer.Tile({ source: new ol.source.OSM() });
+var oldZoom = 17;
 
-    // Tıklama işlevi
-    map.on("click", function (e) {
+var map = new ol.Map({
+	target: 'map', 
+	layers: [
+		tile_layer
+	], 
+	view: new ol.View({
+		center: ol.proj.fromLonLat([7.086, 50.727]),
+		zoom: oldZoom,
+		maxZoom: 20,
+		minZoom: 14,
+		extent: [minx, miny, maxx, maxy],
+	}) 
+});
+map.on("click", function (e) {
       var position = ol.proj.toLonLat(e.coordinate);
       if (!marker1) {
         marker1 = new ol.Feature({
@@ -80,39 +56,43 @@
         coord1Input.value = position[0].toFixed(7) + "," + position[1].toFixed(7);
       }
     });
-  }
 
   function findShortestPath() {
+    console.log("this function is findShortestPath version 2")
+
     var coord1 = coord1Input.value.split(",");
     var coord2 = coord2Input.value.split(",");
     var lat1 = parseFloat(coord1[0]);
     var lon1 = parseFloat(coord1[1]);
     var lat2 = parseFloat(coord2[0]);
     var lon2 = parseFloat(coord2[1]);
-    // API'ye istek gönder
+      console.log(lat1,
+                  lon1,
+                  lat2,
+                  lon2)
+    const url = `/routing2023_ASA/api/shortestPath/shortest-path-params?lat1=${lat1}&lon1=${lon1}&lat2=${lat2}&lon2=${lon2}`;
 
-    const url = `http://localhost:8080/api/shortestPath/shortest-path-params?lat1=${lat1}&lon1=${lon1}&lat2=${lat2}&lon2=${lon2}`;
-
+    console.log(url)
     fetch(url)
             .then(response => {
               if (response.ok) {
                 return response.json();
               } else {
-                throw new Error('API isteği başarısız oldu.');
+                throw new Error('Connection is unsuccessful.');
               }
             })
             .then(data => {
-              // İşlenecek verileri burada kullanabilirsiniz
-              console.log('API cevabı:', data);
+            
+              console.log('Server respond:', data);
               console.log(url);
 
-              // Yolu haritada çiz
               pathId = data.pathId;
               drawPath(data.coordinates);
             })
             .catch(error => {
-              console.error('API isteği sırasında bir hata oluştu:', error);
+              console.error('Connection is unsuccessful.', error);
             });
+    document.getElementById("selectPointButton").disabled = false;
   }
 
   function drawPath(path) {
@@ -152,8 +132,6 @@
     });
 
     map.addLayer(line);
-
-    // Path çizildikten sonra selectPointButton'u görünür hale getir
     document.getElementById("selectPointButton").style.display = "block";
   }
 
@@ -166,23 +144,24 @@
       var lon = position[1];
 
       // PathId ve kullanıcının seçtiği noktanın koordinatlarıyla yeni bir API isteği gönderin
-      const infoUrl = `http://localhost:8080/api/building/infoLatLon?pathId=${pathId}&lat=${lat}&lon=${lon}`;
-      console.log(pathId)
+      const infoUrl = `/routing2023_ASA/api/building/infoLatLon?pathId=${pathId}&lat=${lat}&lon=${lon}`;
+      console.log(infoUrl);
       fetch(infoUrl)
               .then(response => {
                 if (response.ok) {
                   return response.text();
                 } else {
-                  throw new Error('API isteği başarısız oldu.');
+                  //throw new Error('Connection is unsuccessful.');
                 }
               })
               .then(data => {
                 // Dönen bilgiyi konsola yazdır
-                console.log('API cevabı:', data);
+                console.log('Connection is successfull:', data);
                 speak(data);
               })
               .catch(error => {
-                console.error('API isteği sırasında bir hata oluştu:', error);
+                  console.log(error)
+                console.error('Connection is unsuccessful.', error);
               });
     });
 
@@ -191,12 +170,9 @@
     if ('speechSynthesis' in window) {
       var msg = new SpeechSynthesisUtterance();
       msg.text = text;
+      msg.lang = "en-GB"; // Set the language to English (UK)
       window.speechSynthesis.speak(msg);
     } else {
-      console.error('Tarayıcınız Web Speech API desteklemiyor.');
+      console.error('Your browser doesnt support voice features.');
     }
   }
-  initMap();
-</script>
-</body>
-</html>

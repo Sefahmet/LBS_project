@@ -18,11 +18,64 @@ import scala.Tuple2;
 import java.util.*;
 
 @Service
+
 public class ShortestPathService {
 
     public static MyDataSingleton getShortestPathCoordinates( Double x1, Double y1, Double x2, Double y2){
         try{
             MyDataSingleton data = new MyDataSingleton();
+
+            GraphFeatures graphFeatures = data.getGraphFeatures();
+            Graph<Node, DefaultWeightedEdge> graph = graphFeatures.getGraph();
+            // Start ve end noktalarını temsil eden Coordinate objeleri oluşturuldu
+            Coordinate start = new Coordinate(x1, y1);
+            Coordinate end = new Coordinate(x2, y2);
+            Set<DefaultWeightedEdge> edgeset = graph.edgeSet();
+            Iterator iterator = edgeset.iterator();
+            while(iterator.hasNext()){
+                DefaultWeightedEdge edgee = (DefaultWeightedEdge) iterator.next();
+                Node source = graph.getEdgeSource(edgee);
+                Node target = graph.getEdgeTarget(edgee);
+            }
+
+            // En kısa yolu hesapla
+            DijkstraShortestPath<Node, DefaultWeightedEdge> shortestPathAlg = new DijkstraShortestPath<>(graph);
+            // Get closest node on graph
+            Node[] nodes = getClosestNode(graphFeatures.getEdgeHashMap(),start);
+            Node startNode1 = nodes[0];
+            Node startNode2 = nodes[1];
+            Node[]endNodes = getClosestNode(graphFeatures.getEdgeHashMap(),end);
+            Node endNode1 = endNodes[0];
+            Node endNode2 = endNodes[1];
+
+            GraphPath<Node, DefaultWeightedEdge> shortestPath11 = shortestPathAlg.getPath(startNode1,endNode1);
+            GraphPath<Node, DefaultWeightedEdge> shortestPath21 = shortestPathAlg.getPath(startNode2,endNode1);
+            GraphPath<Node, DefaultWeightedEdge> shortestPath12 = shortestPathAlg.getPath(startNode1,endNode2);
+            GraphPath<Node, DefaultWeightedEdge> shortestPath22 = shortestPathAlg.getPath(startNode2,endNode2);
+            double w1 = shortestPath11.getWeight();
+            double w2 = shortestPath12.getWeight();
+            double w3 = shortestPath21.getWeight();
+            double w4 = shortestPath22.getWeight();
+            if (Math.min(w1,w2)<Math.min(w3,w4)){
+                data.setShortestPath(shortestPath11);
+            }else if(Math.min(w2,w1)<Math.min(w3,w4)){
+                data.setShortestPath(shortestPath12);
+            }else if(Math.min(w3,w1)<Math.min(w2,w4)){
+                data.setShortestPath(shortestPath21);
+            }else{
+                data.setShortestPath(shortestPath22);
+            }
+            return data;
+        }catch (Exception e){
+            System.out.println(e);
+        }
+
+
+        return null;
+    }
+    public static MyDataSingleton getShortestPathCoordinates( Double x1, Double y1, Double x2, Double y2,String path){
+        try{
+            MyDataSingleton data = new MyDataSingleton(path);
 
             GraphFeatures graphFeatures = data.getGraphFeatures();
             Graph<Node, DefaultWeightedEdge> graph = graphFeatures.getGraph();
